@@ -4,7 +4,6 @@ pub fn build(b: *std.Build) void {
     const ex_name = "bitonic-api";
 
     const target = b.standardTargetOptions(.{});
-
     const optimize = b.standardOptimizeOption(.{});
 
     const zap_dep = b.dependency("zap", .{});
