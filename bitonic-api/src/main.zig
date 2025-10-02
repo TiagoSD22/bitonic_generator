@@ -14,10 +14,13 @@ pub fn main() !void {
     });
 }
 
-fn handleRequest(r: zap.Request) !void {
+fn handleRequest(r: zap.Request) void {
     if (r.path) |path| {
         if (std.mem.eql(u8, path, "/bitonic") and std.mem.eql(u8, r.method.?, "POST")) {
-            try handleBitonic(&r);
+            handleBitonic(&r) catch {
+                r.setStatus(.internal_server_error);
+                r.sendBody("Internal Server Error") catch {};
+            };
             return;
         }
     }
@@ -73,15 +76,15 @@ fn handleBitonic(r: *const zap.Request) !void {
 
     // Format the array as JSON
     var json_array = try std.ArrayList(u8).initCapacity(allocator, 256);
-    defer json_array.deinit(allocator);
+    defer json_array.deinit();
 
-    try json_array.appendSlice(allocator, "[");
+    try json_array.appendSlice("[");
     for (result, 0..) |val, i| {
-        if (i > 0) try json_array.appendSlice(allocator, ",");
+        if (i > 0) try json_array.appendSlice(",");
         const val_str = try std.fmt.allocPrint(allocator, "{}", .{val});
-        try json_array.appendSlice(allocator, val_str);
+        try json_array.appendSlice(val_str);
     }
-    try json_array.appendSlice(allocator, "]");
+    try json_array.appendSlice("]");
 
     const json_response = try std.fmt.allocPrint(allocator, "{{ \"sequence\": {s} }}", .{json_array.items});
 
